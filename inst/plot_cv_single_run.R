@@ -85,8 +85,8 @@ par(mfrow = c(1,1))
 rmse(x = rsp_mod$y_train_hat[4001:n_mcmc,,drop = FALSE] %>% colMeans(), rsp_mod$data$y_train)
 rmse(x = rsp_mod$y_test_hat[4001:n_mcmc,,drop = FALSE] %>% colMeans(), y_test)
 
-all_tau_beta[burn_sample_:n_mcmc,,drop = FALSE] %>% apply(2,sd) %>% plot
-points((1:NCOL(variable_importance_matrix))[c(1:5,11)],apply(all_tau_beta[burn_sample_:n_mcmc,c(1:5,11),drop = FALSE],2,sd),
+all_tau_beta[burn_sample_:n_mcmc,,drop = FALSE] %>% apply(2,var) %>% plot
+points((1:NCOL(variable_importance_matrix))[c(1:5,11)],apply(all_tau_beta[burn_sample_:n_mcmc,c(1:5,11),drop = FALSE],2,var),
        ylab = "mean_tau_beta", xlab = "Predictor/Basis", pch = 20)
 
 boxplot(all_tau_beta[4001:n_mcmc,,drop = FALSE], ylab = expression(lambda[j]), main = expression(lambda[j]))

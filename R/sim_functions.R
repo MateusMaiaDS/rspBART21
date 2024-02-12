@@ -210,14 +210,15 @@ mlbench.d1 <- function(n, sd = 1) {
 }
 
 mlbench.d1.break <- function(n, sd = 1) {
-  x <- matrix(runif(n,min = -pi,max = pi),ncol = 1)
-  y <- sin(2*x)
-  y[x<0] <- y[x<0] + 5
-  y[x>=0] <- y[x>=0] - 5
+  x <- matrix(runif(2*n,min = -pi,max = pi),ncol = 2)
+  y <- sin(2*x[,1])
+  y[x[,1]<0] <- y[x[,1]<0] + 5
+  y[x[,1]>=0] <- y[x[,1]>=0] - 5
 
   if (sd > 0) {
     y <- y + rnorm(n, sd = sd)
   }
+  # colnames(x) <- paste0("x.",1:NCOL(x))
   list(x = x, y = y)
 }
 
@@ -379,10 +380,10 @@ plot.non.and.smooth.main <- function(x_){
 
 }
 
-# Testing generating
-# set.seed(42)
+# # Testing generating
+# # set.seed(42)
 sim_data <- sim.gen(n_ = 100,sd_ = 42,p_ = 10,formula_ = non.smooth.main.formula)
-#
+# #
 plot.non.smooth.main(x_ = sim_data$x)
 
 

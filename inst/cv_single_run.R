@@ -25,7 +25,7 @@ n_rep_ <- 10
 # type_ <- "smooth.main.formula"
 type_ <- "non.smooth.main.formula"
 # type_ <- "non.and.smooth.main.formula"
-
+# type_ <- 'mlbench.d1.break'
 # ================
 # Printing message
 # ================
@@ -87,9 +87,11 @@ for( i in 1:n_rep_){
     train <- mlbench.friedman1.interaction.only(n = n_,sd = sd_) %>% as.data.frame()
     test <- mlbench.friedman1.interaction.only(n = n_,sd = sd_) %>% as.data.frame()
   }
-  # train <- mlbench.d1.break(n = n_,sd = sd_)  |> as.data.frame()
-  # test <- mlbench.d1.break(n = n_,sd = sd_) |> as.data.frame()
 
+  if(type_ == 'mlbench.d1.break'){
+    train <- mlbench.d1.break(n = n_,sd = sd_)  |> as.data.frame()
+    test <- mlbench.d1.break(n = n_,sd = sd_) |> as.data.frame()
+  }
   cv_[[i]]$train <- train
   cv_[[i]]$test <- test
 }
@@ -114,11 +116,11 @@ n_mcmc <- 5000
 n_burn <- 2500
 alpha <- 0.5
 beta <- 2
-df <- 1
+df <- 100
 sigquant <- 0.9
 kappa <- 2
 nIknots <- 20
-dif_order <- 3
+dif_order <- 2
 tau <- 1
 scale_bool <- TRUE
 stump <- FALSE
@@ -141,11 +143,11 @@ varimportance_bool <- TRUE
 seed_ <- 42
 scale_basis_function <- FALSE
 robust_prior <- FALSE
-eta <- 1e-6
-a_delta <- 0.5
-d_delta <- 0.5
-pen_basis <- TRUE
-
+eta <- 10
+a_delta <- 0.1
+d_delta <- 20
+pen_basis <- FALSE
+centered_basis <- TRUE
 set.seed(seed_)
 
 print(paste0("N: ",n_," SD: ", sd_, " nIknots: ", nIknots,
@@ -177,14 +179,17 @@ rsp_mod <- rspBART(x_train = x_train,
                    use_D_bool = use_D_bool,
                    varimportance_bool = varimportance_bool,
                    scale_basis_function = scale_basis_function,
-                   robust_prior = robust_prior,eta = eta,pen_basis = pen_basis)
+                   robust_prior = robust_prior,eta = eta,
+                   pen_basis = pen_basis,centered_basis = centered_basis)
 
 
 
 
 
-saveRDS(object = rsp_mod,file = paste0("/users/research/mmarques/spline_bart_lab/preliminar_results/rspBART20/",type_,"/single_run/v26_single_run_rep_",
+saveRDS(object = rsp_mod,file = paste0("/users/research/mmarques/spline_bart_lab/preliminar_results/rspBART21/",type_,"/single_run/v28_single_run_rep_",
                                        selected_rep_,"_n_",n_,
-                                      "_sd_",sd_,"_nIknots_",nIknots,"_ntree_",n_tree,"_nodesize_",node_min_size,
+                                      "_sd_",sd_,"_nIknots_",
+                                      nIknots,"_ntree_",n_tree,"_adelta_",a_delta,"_ddelta_",d_delta,
                                       "_dif_",dif_order,"_scale_",scale_bool,"_sc_basis_",scale_basis_function,
-                                      "_nmcmc_",n_mcmc,"_nburn_",n_burn,"_rb_prior_",robust_prior,"_bpen_",pen_basis,".Rds"))
+                                      "_nmcmc_",n_mcmc,"_nburn_",n_burn,"_rb_prior_",robust_prior,
+                                      "_bpen_",pen_basis,"_cbasis_",centered_basis,".Rds"))
