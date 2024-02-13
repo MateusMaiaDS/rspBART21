@@ -482,7 +482,9 @@ all_bart_lite_interaction <- function(cv_element,
                     interaction_term = interaction_term_,main_effects_pred = FALSE,
                     update_tau_beta = update_tau_beta_,mle_prior = mle_prior_,linero_sampler = FALSE,
                     use_D_bool = FALSE,scale_basis_function = FALSE,store_tree_fit = FALSE,varimportance_bool = TRUE,
-                    robust_prior = FALSE)
+                    robust_prior = FALSE,
+                    df = 10,eta = 1e-23,a_delta = 0.1,d_delta = 20,
+                    pen_basis = FALSE,centered_basis = TRUE)
 
 
   n_burn_ <- n_burn_

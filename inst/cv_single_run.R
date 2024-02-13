@@ -21,9 +21,9 @@ n_rep_ <- 10
 # (2): "friedman_nointer_nonoise": four-dimensional friedmna setting with no interaction terms and no extra X noise variables
 # (3): "interaction
 # type_ <- c("friedman_break")
-# type_ <- c("friedman")
+type_ <- c("friedman")
 # type_ <- "smooth.main.formula"
-type_ <- "non.smooth.main.formula"
+# type_ <- "non.smooth.main.formula"
 # type_ <- "non.and.smooth.main.formula"
 # type_ <- 'mlbench.d1.break'
 # ================
@@ -143,7 +143,7 @@ varimportance_bool <- TRUE
 seed_ <- 42
 scale_basis_function <- FALSE
 robust_prior <- FALSE
-eta <- 10
+eta <- 1e-23
 a_delta <- 0.1
 d_delta <- 20
 pen_basis <- FALSE
@@ -153,6 +153,7 @@ set.seed(seed_)
 print(paste0("N: ",n_," SD: ", sd_, " nIknots: ", nIknots,
              " Ntree: ",n_tree, " Seed: ",seed_, " Alpha:", alpha,
              "Update \tau_\beta: ", update_tau_beta, " Dif.Order:", dif_order, "_type_", type_, "_nmcmc_", n_mcmc, "_nburn_",n_burn))
+
 
 rsp_mod <- rspBART(x_train = x_train,
                    y_train = y_train,
@@ -179,6 +180,7 @@ rsp_mod <- rspBART(x_train = x_train,
                    use_D_bool = use_D_bool,
                    varimportance_bool = varimportance_bool,
                    scale_basis_function = scale_basis_function,
+                   a_delta = a_delta,d_delta = d_delta,
                    robust_prior = robust_prior,eta = eta,
                    pen_basis = pen_basis,centered_basis = centered_basis)
 
@@ -186,7 +188,7 @@ rsp_mod <- rspBART(x_train = x_train,
 
 
 
-saveRDS(object = rsp_mod,file = paste0("/users/research/mmarques/spline_bart_lab/preliminar_results/rspBART21/",type_,"/single_run/v28_single_run_rep_",
+saveRDS(object = rsp_mod,file = paste0("/users/research/mmarques/spline_bart_lab/preliminar_results/rspBART21/",type_,"/single_run/v30_single_run_rep_",
                                        selected_rep_,"_n_",n_,
                                       "_sd_",sd_,"_nIknots_",
                                       nIknots,"_ntree_",n_tree,"_adelta_",a_delta,"_ddelta_",d_delta,

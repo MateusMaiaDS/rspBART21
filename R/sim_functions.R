@@ -294,14 +294,14 @@ non.smooth.main.formula <- function(x_){
 
 # Formula for the model with only main effects
 non.and.smooth.main.formula <- function(x_){
-  y.1 <- sin(2*pi*x_[,1])
+  y.1 <- sin(2*pi*x_[,1])*5
   y.2 <- rep(2,nrow(x_))
   y.2[x_[,2] < -0.3] <- 5
   y.2[(x_[,2] >= -0.3) & (x_[,2] < 0.5) ] <- 10.0
 
   y.3 <- rep(7,nrow(x_))
   y.3[x_[,3]<0] <- -3
-  y.4 <- cos(x_[,4])
+  y.4 <- cos(x_[,4])*10
 
   # Generating the main effect matrix
   main.effects <- cbind(y.1,y.2,y.3,y.4)
@@ -382,9 +382,9 @@ plot.non.and.smooth.main <- function(x_){
 
 # # Testing generating
 # # set.seed(42)
-sim_data <- sim.gen(n_ = 100,sd_ = 42,p_ = 10,formula_ = non.smooth.main.formula)
+# sim_data <- sim.gen(n_ = 100,sd_ = 42,p_ = 10,formula_ = non.and.smooth.main.formula)
 # #
-plot.non.smooth.main(x_ = sim_data$x)
+# plot.non.and.smooth.main(x_ = sim_data$x)
 
 
 

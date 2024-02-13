@@ -125,10 +125,10 @@ rspBART <- function(x_train,
 
 
   # Normalising all the columns
-  for(i in 1:ncol(x_train)){
-    x_train_scale[,i] <- normalize_covariates_bart(y = x_train_scale[,i],a = x_min[i], b = x_max[i])
-    x_test_scale[,i] <- normalize_covariates_bart(y = x_test_scale[,i],a = x_min[i], b = x_max[i])
-  }
+  # for(i in 1:ncol(x_train)){
+  #   x_train_scale[,i] <- normalize_covariates_bart(y = x_train_scale[,i],a = x_min[i], b = x_max[i])
+  #   x_test_scale[,i] <- normalize_covariates_bart(y = x_test_scale[,i],a = x_min[i], b = x_max[i])
+  # }
 
 
 
@@ -171,17 +171,20 @@ rspBART <- function(x_train,
     # Creating the knots based on the DALSM:: package
     new_knots <- list()
     for(i in 1:length(dummy_x$continuousVars)){
+      change_dif_bool <- FALSE
       if(dif_order==0){
         dif_order = 1
+        change_dif_bool <- TRUE
       }
       new_knots[[i]] <- DALSM::qknots(x = x_train_scale[,i],equid.knots = TRUE,
                                       xmin = min(min(x_test_scale[,i]),min(x_train_scale[,i])),
                                       xmax = max(max(x_test_scale[,i]),max(x_train_scale[,i])),
                                       pen.order = dif_order,K = nIknots)
       # Simplification in case dif_order = 0
-      if(dif_order==0){
+      if(dif_order==1 & change_dif_bool){
+        new_knots[[i]]$Dd <- diag(nrow = nrow(new_knots[[i]]$Dd))
         new_knots[[i]]$Pd <- diag(nrow = nrow(new_knots[[i]]$Pd))
-        new_knots[[i]]$pen.order = 0
+        # new_knots[[i]]$pen.order = 0
         dif_order = 0
       }
     }
@@ -247,28 +250,64 @@ rspBART <- function(x_train,
 
     } else { ## Accounting for the case wiht centered-basis
 
+          if(dif_order!=0){
 
-          # Modify the basis only with respect to the main effects at the moment
-          centered_basis_aux <- DALSM::centeredBasis.gen(x = x_train_scale[,dummy_x$continuousVars[i]],
-                                                         knots = new_knots[[i]]$knots,
-                                                         pen.order = dif_order)
+                # Modify the basis only with respect to the main effects at the moment
+                centered_basis_aux <- DALSM::centeredBasis.gen(x = x_train_scale[,dummy_x$continuousVars[i]],
+                                                               knots = new_knots[[i]]$knots,
+                                                               pen.order = dif_order)
 
-          train.B.ref <- centered_basis_aux$B
-          intercept_train <- 1
-          train_basis_intercept <- cbind(intercept_train,train.B.ref)
-
-
-          B_train_obj[[i]] <- train_basis_intercept
+                train.B.ref <- centered_basis_aux$B
+                intercept_train <- 1
+                train_basis_intercept <- cbind(intercept_train,train.B.ref)
 
 
-          # Doing the same for the test samples
-          centered_basis_aux_test <-DALSM::centeredBasis.gen(x = x_test_scale[,dummy_x$continuousVars[i], drop = FALSE],
-                                                             knots = new_knots[[i]]$knots,pen.order = dif_order)
-          test.B.ref <- centered_basis_aux_test$B
-          intercept_test <- 1
-          test_basis_intercept <- cbind(intercept_test,test.B.ref)
+                B_train_obj[[i]] <- train.B.ref # Change this line if we want to use the intercept
 
-          B_test_obj[[i]] <- test_basis_intercept
+
+                # Doing the same for the test samples
+                centered_basis_aux_test <-DALSM::centeredBasis.gen(x = x_test_scale[,dummy_x$continuousVars[i], drop = FALSE],
+                                                                   knots = new_knots[[i]]$knots,pen.order = dif_order)
+                test.B.ref <- centered_basis_aux_test$B
+                intercept_test <- 1
+                test_basis_intercept <- cbind(intercept_test,test.B.ref)
+
+                B_test_obj[[i]] <- test.B.ref
+
+          } else { # Case the dif_order == 0
+
+
+            # Modify the basis only with respect to the main effects at the moment
+            centered_basis_aux <- DALSM::centeredBasis.gen(x = x_train_scale[,dummy_x$continuousVars[i]],
+                                                           knots = new_knots[[i]]$knots,
+                                                           pen.order = 1)
+
+            train.B.ref <- centered_basis_aux$B
+            intercept_train <- 1
+            train_basis_intercept <- cbind(intercept_train,train.B.ref)
+
+
+            B_train_obj[[i]] <- train.B.ref # Change this line if we want to use the intercept
+
+
+            # Modifying the penalty elements
+            centered_basis_aux$Dd <- diag(nrow = nrow(centered_basis_aux$Dd))
+            centered_basis_aux$Pd <- diag(nrow = nrow(centered_basis_aux$Pd))
+
+            # Doing the same for the test samples
+            centered_basis_aux_test <-DALSM::centeredBasis.gen(x = x_test_scale[,dummy_x$continuousVars[i], drop = FALSE],
+                                                               knots = new_knots[[i]]$knots,pen.order = 1)
+            test.B.ref <- centered_basis_aux_test$B
+            intercept_test <- 1
+            test_basis_intercept <- test.B.ref # Change this line if I want to return to use the intercept
+
+            B_test_obj[[i]] <- test_basis_intercept
+
+            # Modifying the penalty elements
+            centered_basis_aux_test$Dd <- diag(nrow = nrow(centered_basis_aux_test$Dd))
+            centered_basis_aux_test$Pd <- diag(nrow = nrow(centered_basis_aux_test$Pd))
+
+          }
 
     }
 
@@ -309,8 +348,8 @@ rspBART <- function(x_train,
     jj_ = length(dummy_x$continuousVars)
     for (jj in 1:NCOL(interaction_list)) {
       jj_ = jj_ +1
-      B_train_obj[[jj_]] <- multiply_matrices_general(A = B_train_obj[[interaction_list[1,jj]]][,-1],B = B_train_obj[[interaction_list[2,jj]]][,-1])
-      B_test_obj[[jj_]] <- multiply_matrices_general(A = B_test_obj[[interaction_list[1,jj]]][,-1],B = B_test_obj[[interaction_list[2,jj]]][,-1])
+      B_train_obj[[jj_]] <- multiply_matrices_general(A = B_train_obj[[interaction_list[1,jj]]],B = B_train_obj[[interaction_list[2,jj]]])
+      B_test_obj[[jj_]] <- multiply_matrices_general(A = B_test_obj[[interaction_list[1,jj]]],B = B_test_obj[[interaction_list[2,jj]]])
     }
   }
 
@@ -397,6 +436,9 @@ rspBART <- function(x_train,
   } else {
     tau_beta <- rep(tau_mu,length(dummy_x$continuousVars))
   }
+
+  # Doing an extra test for \tau_beta
+  # tau_beta <- rep(100,length(tau_beta))
 
   # all_df <- cbind(x_train,y_train)
   # mod <- mgcv::gam(y_train ~ bs(x.10), data = all_df)
@@ -506,7 +548,7 @@ rspBART <- function(x_train,
 
   # Creating the penalty matrix
   if(dif_order==0){
-    P <- diag(nrow = NCOL(B_train_obj[[1]])-1)
+    P <- diag(nrow = NCOL(B_train_obj[[1]]))
     P_train_main <- diag(nrow = NCOL(B_train_obj[[1]]))
   } else {
     if(centered_basis){
@@ -519,10 +561,11 @@ rspBART <- function(x_train,
         P[2,2] <- P[2,2] + eta
       }
     } else {
-      D <- (diff(diag(NCOL(B_train_obj[[1]])-1),differences = dif_order))
+      D <- (diff(diag(NCOL(B_train_obj[[1]])),differences = dif_order))
       P <- crossprod(D)
     }
-    auxP <- as.matrix(Matrix::bdiag(1,P))
+    # auxP <- as.matrix(Matrix::bdiag(1,P))
+    auxP <- P
     P_train_main <- as.matrix(Matrix::nearPD(auxP)$mat)
   }
 
@@ -847,7 +890,7 @@ rspBART <- function(x_train,
       if(main_effects_pred){
         for(ii in 1:length(main_effects_train_list)){
           main_effects_train_list[[ii]][i,] <- main_effects_train_list[[ii]][i,] + update_betas_aux$y_hat_train[,ii]
-          # main_effects_test_list[[ii]][i,] <- main_effects_test_list[[ii]][i,] + update_betas_aux$y_hat_test[,ii]
+          main_effects_test_list[[ii]][i,] <- main_effects_test_list[[ii]][i,] + update_betas_aux$y_hat_test[,ii]
         }
 
       }
@@ -948,7 +991,7 @@ rspBART <- function(x_train,
       if(main_effects_pred){
         for(ii in 1:length(main_effects_train_list)){
           main_effects_train_list_norm[[ii]][post_iter,] <- unnormalize_bart_me(z = main_effects_train_list[[ii]][post_iter,],a = min_y,b = max_y)
-          # main_effects_test_list_norm[[ii]][post_iter,] <- unnormalize_bart_me(z = main_effects_test_list[[ii]][post_iter,],a = min_y,b = max_y)
+          main_effects_test_list_norm[[ii]][post_iter,] <- unnormalize_bart_me(z = main_effects_test_list[[ii]][post_iter,],a = min_y,b = max_y)
         }
       }
     }
@@ -1010,7 +1053,7 @@ rspBART <- function(x_train,
       # Main effect range difference
       range_basis_j_predictions <- numeric(length = length(main_effects_train_list_norm))
       range_tree_bais_j_predictions <- matrix(NA, ncol = n_tree, nrow = length(main_effects_train_list_norm))
-      n_burn_plot <- 100
+      n_burn_plot <- 500
 
       # points(x_train[,1],y_train)
       par(mfrow = c(2,floor(NCOL(data$x_train)/2)))
